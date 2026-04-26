@@ -27,6 +27,9 @@ export default defineNuxtConfig({
       // point it at http://api:8000 — `api` is not resolvable from the host.
       apiBase: 'http://localhost:8000/api/v1/', // env: NUXT_PUBLIC_API_BASE
 
+      // Browser-reachable Django origin, used by the /admin redirect.
+      djangoHost: 'http://localhost:8000', // env: NUXT_PUBLIC_DJANGO_HOST
+
       // Phase 6 — empty until Stripe lands.
       stripePublishableKey: '', // env: NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     },

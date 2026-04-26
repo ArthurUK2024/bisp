@@ -45,6 +45,19 @@ export function useListings() {
       authedApi(`listings/${listingId}/photos/${photoId}/`, { method: 'DELETE' }),
 
     deleteListing: (id: number) => authedApi(`listings/${id}/`, { method: 'DELETE' }),
+
+    aiSuggestFromPhotos: (files: File[]) => {
+      const form = new FormData()
+      for (const file of files) form.append('photos', file)
+      return authedApi<{
+        title: string | null
+        description: string | null
+        category: string | null
+        price_hour: number | null
+        price_day: number | null
+        price_month: number | null
+      }>('listings/ai-suggest/', { method: 'POST', body: form })
+    },
   }
 }
 

@@ -1,15 +1,10 @@
 <script setup lang="ts">
 // pages/register.vue
-//
-// Public register page. VeeValidate form bound to registerSchema
-// (which mirrors Django's LetterAndDigitValidator — min 8, one
-// letter, one digit). On success, the page first calls
-// authStore.register() (Django responds 201 with {id, email} and
-// issues no tokens — locked decision #10 from 02-04), then chains
-// into authStore.login() so the user lands on /dashboard/profile
-// already signed in. Two round trips, one form submit.
-//
-// Nuxt UI v3 components used: UCard, UFormField, UInput, UButton.
+// Public sign-up page. Validation follows the same Zod schema the
+// backend's LetterAndDigitValidator was built around (min 8, at least
+// one letter, at least one digit). On success, register() then
+// login() chain so the user lands on /dashboard/profile already
+// authed.
 
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -28,79 +23,119 @@ const { handleSubmit, errors, defineField, isSubmitting } = useForm({
 const [email, emailAttrs] = defineField('email')
 const [password, passwordAttrs] = defineField('password')
 
+const showPassword = ref(false)
 const submitError = ref<string | null>(null)
 
 const onSubmit = handleSubmit(async (values) => {
   submitError.value = null
   try {
     await auth.register(values)
-    // Locked decision 10 — Django does not auto-login on register.
-    // Chain into login() so the user lands authed on /dashboard/profile
-    // without a second form submit.
+    // Django returns 201 with no tokens, so chain straight into login.
     await auth.login(values)
     await navigateTo('/dashboard/profile')
   } catch (err: unknown) {
-    // DRF ValidationError responses come through $fetch as FetchError
-    // with a `.data` payload shaped like {email: [...], password: [...]}.
     const data = (err as { data?: { email?: string[]; password?: string[] } })?.data
     if (data?.email?.length) {
       submitError.value = data.email[0]
     } else if (data?.password?.length) {
       submitError.value = data.password[0]
     } else {
-      submitError.value = 'Registration failed. Try a different email or a stronger password.'
+      submitError.value =
+        'Could not finish registration. Try a different email, or pick a stronger password.'
     }
   }
 })
 </script>
 
 <template>
-  <main class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-8">
-    <UCard class="w-full max-w-md">
-      <template #header>
-        <h1 class="text-2xl font-semibold">Create an account</h1>
-      </template>
+  <main class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-6 bg-white">
+    <section class="w-full max-w-md">
+      <div class="w-full space-y-8">
+        <div class="space-y-2">
+          <h1 class="text-3xl font-semibold tracking-tight">Make an account</h1>
+          <p class="text-sm text-gray-600">
+            Takes about a minute. You can add your name and phone number after.
+          </p>
+        </div>
 
-      <form class="space-y-4" @submit="onSubmit">
-        <UFormField label="Email" :error="errors.email" required>
-          <UInput
-            v-model="email"
-            v-bind="emailAttrs"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-            class="w-full"
-          />
-        </UFormField>
+        <form class="space-y-5" @submit="onSubmit">
+          <label class="block space-y-1">
+            <span class="text-sm font-medium text-gray-800">Email</span>
+            <input
+              v-model="email"
+              v-bind="emailAttrs"
+              type="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+            />
+            <span v-if="errors.email" class="block text-xs text-red-600">{{ errors.email }}</span>
+          </label>
 
-        <UFormField
-          label="Password"
-          :error="errors.password"
-          hint="At least 8 characters, with one letter and one digit."
-          required
+          <label class="block space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-gray-800">Password</span>
+              <button
+                type="button"
+                class="text-xs text-gray-500 hover:text-gray-800 underline-offset-2 hover:underline"
+                @click="showPassword = !showPassword"
+              >
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <input
+              v-model="password"
+              v-bind="passwordAttrs"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              placeholder="At least 8 characters"
+              class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+            />
+            <span class="block text-xs text-gray-500"> Mix letters and numbers, please. </span>
+            <span v-if="errors.password" class="block text-xs text-red-600">{{
+              errors.password
+            }}</span>
+          </label>
+
+          <p
+            v-if="submitError"
+            class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {{ submitError }}
+          </p>
+
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="w-full rounded-md bg-slate-900 text-white px-4 py-3 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span v-if="isSubmitting">Creating account...</span>
+            <span v-else>Create account</span>
+          </button>
+        </form>
+
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200" />
+          </div>
+          <div class="relative flex justify-center">
+            <span class="bg-white px-2 text-xs uppercase tracking-wider text-gray-400">
+              Already a member?
+            </span>
+          </div>
+        </div>
+
+        <NuxtLink
+          to="/login"
+          class="block w-full text-center rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-colors"
         >
-          <UInput
-            v-model="password"
-            v-bind="passwordAttrs"
-            type="password"
-            autocomplete="new-password"
-            class="w-full"
-          />
-        </UFormField>
+          Sign in instead
+        </NuxtLink>
 
-        <p v-if="submitError" class="text-sm text-red-600">{{ submitError }}</p>
-
-        <UButton type="submit" :disabled="isSubmitting" :loading="isSubmitting" block>
-          Create account
-        </UButton>
-      </form>
-
-      <template #footer>
-        <p class="text-sm text-gray-600">
-          Already have an account?
-          <NuxtLink to="/login" class="underline">Sign in</NuxtLink>
+        <p class="text-xs text-center text-gray-400">
+          By creating an account you agree to the community guidelines.
         </p>
-      </template>
-    </UCard>
+      </div>
+    </section>
   </main>
 </template>

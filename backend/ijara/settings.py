@@ -207,3 +207,15 @@ def stripe_configured() -> bool:
         and STRIPE_WEBHOOK_SECRET.startswith("whsec_")
         and "replace_me" not in STRIPE_SECRET_KEY
     )
+
+
+# --- OPENAI -----------------------------------------------------------------
+# Used by /api/v1/listings/ai-suggest/ to turn uploaded photos into a draft
+# title/description/category/price tier. Empty key means the endpoint
+# returns 503 and the front end gracefully falls back to manual entry.
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+OPENAI_MODEL = env("OPENAI_MODEL", default="gpt-4o-mini")
+
+
+def openai_configured() -> bool:
+    return OPENAI_API_KEY.startswith("sk-")

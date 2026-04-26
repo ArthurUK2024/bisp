@@ -46,3 +46,9 @@ Thumbs.db
 .planning/
 report/
 scripts/
+
+# Local secret files — never commit.
+ghtoken.txt
+*.token
+*.pem
+*.key

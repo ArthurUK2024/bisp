@@ -41,6 +41,7 @@ RUN (uv export --frozen --no-emit-project --format requirements-txt \
           "drf-spectacular>=0.28,<0.29" \
           "djangorestframework-simplejwt>=5.5,<5.6" "Pillow>=11,<12" \
           "python-magic>=0.4,<0.5" \
+          "stripe>=10,<13" "openai>=1.50,<2" \
           "pytest>=8,<9" "pytest-django>=4.9,<5" "ruff>=0.9,<1.0" \
           "factory-boy>=3,<4")
 

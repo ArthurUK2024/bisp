@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 from .models import Listing, ListingPhoto
 from .serializers import ListingPhotoSerializer, ListingSerializer
-from .services import save_listing_photo
+from .services import save_listing_photo, suggest_listing_from_photos
 
 # Pricing-unit → model field, used by the price filter and the "unit"
 # query parameter on /api/v1/listings/.
@@ -133,3 +133,35 @@ class ListingPhotoUpload(APIView):
         photo = get_object_or_404(ListingPhoto, pk=pk, listing=listing)
         photo.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ListingAISuggest(APIView):
+    """POST photos, get back a draft title/description/category/prices.
+
+    Powers the photo-first flow on /dashboard/listings/new. The photos are
+    only sent to OpenAI; nothing is stored here. The actual listing photos
+    are uploaded after the user finalises step 2.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        files = request.FILES.getlist("photos") or list(request.FILES.values())
+        if not files:
+            return Response({"photos": ["At least one photo is required."]}, status=400)
+        try:
+            suggestion = suggest_listing_from_photos(files)
+        except RuntimeError:
+            # No OpenAI key, or the call failed (quota, network, auth).
+            # Front end shows the manual-entry fallback banner.
+            return Response(
+                {
+                    "detail": (
+                        "AI suggestions are not available right now. "
+                        "Please fill the listing details manually."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response(suggestion, status=200)
