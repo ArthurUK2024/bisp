@@ -1,11 +1,4 @@
 <script setup lang="ts">
-// pages/register.vue
-// Public sign-up page. Validation follows the same Zod schema the
-// backend's LetterAndDigitValidator was built around (min 8, at least
-// one letter, at least one digit). On success, register() then
-// login() chain so the user lands on /dashboard/profile already
-// authed.
-
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { registerSchema } from '~/schemas/auth'
@@ -30,7 +23,6 @@ const onSubmit = handleSubmit(async (values) => {
   submitError.value = null
   try {
     await auth.register(values)
-    // Django returns 201 with no tokens, so chain straight into login.
     await auth.login(values)
     await navigateTo('/dashboard/profile')
   } catch (err: unknown) {

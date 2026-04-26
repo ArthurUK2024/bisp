@@ -1,14 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/listings/new.vue
-//
-// Two-step create flow with an AI assist:
-//   Step 1: Pick photos. The user can add up to 8, or skip entirely.
-//   Step 2: Details. If photos were uploaded, the page POSTs them to
-//           /api/v1/listings/ai-suggest/ which calls OpenAI's vision
-//           model and returns a draft title/description/category/prices.
-//           Pre-filled fields stay editable. The actual listing is only
-//           created on final submit.
-
 import { CATEGORIES, DISTRICTS, useListings } from '~/composables/useListings'
 
 definePageMeta({
@@ -29,13 +19,11 @@ type StagedPhoto = {
 
 const step = ref<1 | 2>(1)
 
-// --- Step 1 state ---
 const photos = ref<StagedPhoto[]>([])
 const photoError = ref<string | null>(null)
 const dragActive = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// --- Step 2 state ---
 const title = ref('')
 const description = ref('')
 const category = ref('')
@@ -168,7 +156,7 @@ async function onSubmit() {
         await listingsApi.uploadPhoto(created.id, p.file)
         uploadedCount += 1
       } catch {
-        // Continue — listing exists already, the user can re-add later.
+        // ignore individual photo failures
       }
     }
     toast.add({

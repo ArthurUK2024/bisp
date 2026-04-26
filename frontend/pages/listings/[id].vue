@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// pages/listings/[id].vue
-// Listing detail page with gallery, booking card, and owner block.
-
 import { CATEGORIES, DISTRICTS, useListings } from '~/composables/useListings'
 import {
   tashkentISO,
@@ -21,16 +18,11 @@ const { data: listing, error } = await useAsyncData(`listing-${route.params.id}`
   fetchListing(route.params.id as string),
 )
 
-// Gallery state -- user clicks a thumb to swap the hero.
 const activePhotoIndex = ref(0)
 const activePhoto = computed(() => listing.value?.photos?.[activePhotoIndex.value] ?? null)
 
-// Is the current user the owner of this listing? Hide the booking form
-// and show a "manage your listing" panel instead.
 const isOwner = computed(() => auth.isAuthed && auth.user?.id === listing.value?.owner_id)
 
-// Booking form state. datetime-local inputs; we attach +05:00 (Asia/Tashkent)
-// when sending to the API and ask the backend for the authoritative quote.
 const startAt = ref('')
 const endAt = ref('')
 const paymentMethod = ref<PaymentMethod>('cash')
@@ -41,7 +33,6 @@ const booking = ref(false)
 function defaultLocal(offsetHours: number): string {
   const d = new Date(Date.now() + offsetHours * 3600_000)
   d.setMinutes(0, 0, 0)
-  // Render in Tashkent local time as YYYY-MM-DDTHH:MM for the input.
   const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tashkent',
     year: 'numeric',
@@ -124,9 +115,6 @@ function fmtPrice(price: string | null): string {
   return Number(price).toLocaleString('en-US')
 }
 
-// Headline price for the booking widget — shows the most common unit
-// the listing supports (day → hour → month). Lets the renter scan the
-// rate before committing to a date window.
 const headline = computed<{ amount: string; unit: string } | null>(() => {
   if (!listing.value) return null
   if (listing.value.price_day) return { amount: listing.value.price_day, unit: 'day' }
@@ -150,8 +138,6 @@ const otherRates = computed<string[]>(() => {
   return out
 })
 
-// "Add a note" reveals the textarea on click — keeps the default form
-// shape compact for the common case where there's nothing extra to say.
 const noteOpen = ref(false)
 
 function unitLabel(unit: string, qty: number): string {

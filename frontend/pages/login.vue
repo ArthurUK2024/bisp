@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// pages/login.vue
-// Sign-in page. Simple email + password form posting through the Pinia
-// auth store. On success, read ?next=... and navigate there.
-
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { loginSchema } from '~/schemas/auth'

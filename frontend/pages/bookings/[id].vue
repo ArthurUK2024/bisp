@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// pages/bookings/[id].vue
-// Booking detail with full state-transition timeline. Action buttons
-// gated by actor role + current state.
-
 import {
   BOOKING_STATE_LABELS,
   formatTashkent,
@@ -34,7 +30,6 @@ async function load() {
   }
 }
 
-// Client-only: auth-protected fetch, see plugins/auth.client.ts.
 onMounted(load)
 
 const isOwner = computed(() => auth.user?.id === booking.value?.owner_id)
@@ -58,8 +53,6 @@ const availableActions = computed<Action[]>(() => {
         { label: 'Reject', state: 'rejected', danger: true },
       ]
     if (state === 'accepted') {
-      // Stripe bookings: owner must wait for the renter to pay before
-      // pickup. Cash bookings settle at handover, so pickup is fine.
       if (isStripe) {
         return [{ label: 'Cancel', state: 'cancelled', danger: true }]
       }
@@ -83,8 +76,6 @@ const availableActions = computed<Action[]>(() => {
   return []
 })
 
-// Status banner for the owner — explains why "Mark picked up" is missing
-// while a Stripe booking is still in `accepted`.
 const ownerHint = computed(() => {
   if (!booking.value || !isOwner.value) return null
   if (booking.value.state === 'accepted' && booking.value.payment_method === 'stripe') {
@@ -93,9 +84,6 @@ const ownerHint = computed(() => {
   return null
 })
 
-// Status banner for the renter — once they have paid (or accepted for
-// cash), the FSM hands control to the owner. Tell them what to expect
-// at each step so the empty action panel does not feel like a dead end.
 const renterHint = computed(() => {
   if (!booking.value || !isRenter.value) return null
   const state = booking.value.state
@@ -170,14 +158,6 @@ async function act(state: BookingState) {
   }
 }
 
-// Stripe Checkout flow (Phase 6).
-//
-// Uses Stripe-hosted Checkout instead of an embedded Payment Element:
-// click → POST /payments/checkout/ → window.location to Stripe → user
-// pays on Stripe's page → Stripe redirects back with ?stripe_session=
-// → we POST /payments/verify/ which confirms the session against
-// Stripe's API and flips the booking to `paid`. No webhook required
-// for the demo to work end-to-end (the webhook stays as a backup).
 const stripeApi = useStripe()
 const stripeConfig = ref<{ configured: boolean } | null>(null)
 const stripeUI = ref<'idle' | 'redirecting' | 'verifying' | 'failed' | 'cancelled'>('idle')
@@ -191,7 +171,6 @@ const showStripeButton = computed(
     stripeConfig.value?.configured,
 )
 
-// Load Stripe config once the booking arrives in `accepted`+Stripe.
 watch(
   booking,
   async (b) => {
@@ -208,8 +187,6 @@ watch(
   { immediate: true },
 )
 
-// On return from Stripe Checkout the URL carries ?stripe_session=cs_...
-// Verify against Stripe to flip the booking, then strip the param.
 const router = useRouter()
 watch(
   booking,

@@ -1,18 +1,3 @@
-"""Photo upload helper and AI suggestion helper for listings.
-
-The photo pipeline mirrors the avatar service in apps.accounts.services:
-
-    1. Per-listing count cap (max 8 photos)
-    2. Size check (5 MB)
-    3. Content-type sniff via python-magic — defends against the
-       "virus.exe renamed to thing.jpg" extension-spoof bypass
-    4. Pillow open + verify — catches corrupt files and decompression bombs
-    5. Re-open, convert to RGB, resize to fit inside 1600x1600 preserving
-       aspect ratio
-    6. Save as JPEG quality=85 to an in-memory buffer
-    7. Persist via ImageField.save with a deterministic filename
-"""
-
 from __future__ import annotations
 
 import base64
@@ -29,7 +14,7 @@ from rest_framework.exceptions import ValidationError
 
 from .models import ListingPhoto
 
-MAX_PHOTO_BYTES: Final[int] = 5 * 1024 * 1024  # 5 MB
+MAX_PHOTO_BYTES: Final[int] = 5 * 1024 * 1024
 MAX_PHOTOS: Final[int] = 8
 PHOTO_TARGET: Final[tuple[int, int]] = (1600, 1600)
 ALLOWED_MIMES: Final[frozenset[str]] = frozenset(
@@ -38,8 +23,6 @@ ALLOWED_MIMES: Final[frozenset[str]] = frozenset(
 
 
 def save_listing_photo(listing, uploaded_file):
-    """Validate, resize, and persist a listing photo."""
-
     if listing.photos.count() >= MAX_PHOTOS:
         raise ValidationError({"photo": [f"Max {MAX_PHOTOS} photos per listing."]})
 
@@ -82,10 +65,6 @@ def save_listing_photo(listing, uploaded_file):
     return photo
 
 
-# ---------------------------------------------------------------------------
-# AI suggestion: photo -> draft listing fields
-# ---------------------------------------------------------------------------
-
 logger = logging.getLogger(__name__)
 
 AI_INPUT_TARGET: Final[tuple[int, int]] = (768, 768)
@@ -118,7 +97,6 @@ AI_SYSTEM_PROMPT = (
 
 
 def _encode_photo_for_vision(uploaded_file) -> str:
-    """Validate, downscale, and base64-encode an upload for the vision API."""
     if (uploaded_file.size or 0) > MAX_PHOTO_BYTES:
         raise ValidationError({"photo": ["Photo must be under 5 MB."]})
 
@@ -158,7 +136,6 @@ def _coerce_int_or_none(value):
 
 
 def _normalise_suggestion(raw: dict) -> dict:
-    """Strip unknown fields and clamp values into the contract the form expects."""
     title = (raw.get("title") or "").strip()[:80]
     description = (raw.get("description") or "").strip()[:600]
     category = raw.get("category")
@@ -175,22 +152,14 @@ def _normalise_suggestion(raw: dict) -> dict:
 
 
 def suggest_listing_from_photos(uploaded_files) -> dict:
-    """Send up to AI_MAX_PHOTOS images to OpenAI and return a normalised draft.
-
-    Raises ValidationError on bad input. Returns a dict with keys:
-        title, description, category, price_hour, price_day, price_month
-    Any field may be None — the caller pre-fills only the truthy ones.
-    """
     if not uploaded_files:
         raise ValidationError({"photos": ["At least one photo is required."]})
 
     if not settings.OPENAI_API_KEY:
-        # Caller turns this into a 503 — front end falls back to manual entry.
         raise RuntimeError("OPENAI_API_KEY is not configured.")
 
     payload_images = [_encode_photo_for_vision(f) for f in uploaded_files[:AI_MAX_PHOTOS]]
 
-    # Lazy import so the dependency is only required when the feature is on.
     from openai import OpenAI  # type: ignore[import-not-found]
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -211,7 +180,6 @@ def suggest_listing_from_photos(uploaded_files) -> dict:
     for data_url in payload_images:
         user_content.append({"type": "image_url", "image_url": {"url": data_url, "detail": "low"}})
 
-    # Lazy import the error classes so the dependency stays optional.
     from openai import (  # type: ignore[import-not-found]
         APIConnectionError,
         APIError,
@@ -232,8 +200,6 @@ def suggest_listing_from_photos(uploaded_files) -> dict:
         )
     except (RateLimitError, AuthenticationError, APIConnectionError, APIError) as exc:
         logger.warning("OpenAI listing-suggest call failed: %s", exc)
-        # Surface as RuntimeError so the view turns it into a 503 and the
-        # front end shows the manual-entry fallback banner instead of a 500.
         raise RuntimeError("OpenAI request failed") from exc
 
     text = (response.choices[0].message.content or "").strip()

@@ -1,11 +1,3 @@
-// composables/useStripe.ts
-//
-// Lazy Stripe wrapper. The publishable key comes from /api/v1/payments/config/
-// rather than runtimeConfig so the same frontend image can boot in any
-// environment without rebaking. When Stripe is not configured (placeholder
-// keys), every helper returns null and callers can render a "Stripe not set
-// up" badge instead of attempting to mount a Payment Element.
-
 import type { Stripe } from '@stripe/stripe-js'
 
 interface StripeConfig {
@@ -33,8 +25,6 @@ export function useStripe() {
     const config = await loadConfig()
     if (!config.configured) return null
     cachedStripePromise = (async () => {
-      // Dynamic import keeps Stripe out of the SSR bundle and the cash-only
-      // browse path entirely.
       const { loadStripe: loadStripeJs } = await import('@stripe/stripe-js')
       cachedStripe = await loadStripeJs(config.publishable_key)
       return cachedStripe

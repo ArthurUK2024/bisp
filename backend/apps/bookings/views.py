@@ -1,5 +1,3 @@
-"""Booking views."""
-
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -18,13 +16,10 @@ from .services import calculate_booking_price, create_booking, transition
 
 
 def _parse_iso_dt(value: str) -> datetime:
-    # Python 3.11+ accepts trailing 'Z' too.
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 class BookingListCreate(APIView):
-    """GET my bookings (renter / owner / all). POST creates one."""
-
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -73,8 +68,6 @@ class BookingListCreate(APIView):
 
 
 class BookingDetail(APIView):
-    """GET full booking with timeline. PATCH performs an FSM transition."""
-
     permission_classes = [permissions.IsAuthenticated]
 
     def _booking_for_user(self, request, id):
@@ -107,9 +100,6 @@ class BookingDetail(APIView):
 
 
 class OwnerAnalyticsView(APIView):
-    """Aggregate stats for everything the signed-in owner has rented out.
-    Backs the /dashboard/analytics page."""
-
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -122,8 +112,6 @@ class OwnerAnalyticsView(APIView):
         bookings_qs = Booking.objects.filter(listing__owner=user)
         bookings_total = bookings_qs.count()
 
-        # Earned revenue: completed bookings only ("realised").
-        # Pipeline revenue: anything past payment but not yet completed.
         earned = bookings_qs.filter(state=BookingState.COMPLETED.value).aggregate(
             s=Sum("total_amount")
         )["s"] or Decimal("0")
@@ -136,8 +124,6 @@ class OwnerAnalyticsView(APIView):
             "s"
         ] or Decimal("0")
 
-        # State distribution → ordered list so the frontend can render
-        # the bar chart deterministically without sorting.
         state_order = [
             BookingState.REQUESTED.value,
             BookingState.ACCEPTED.value,
@@ -152,8 +138,6 @@ class OwnerAnalyticsView(APIView):
         state_counts = dict(bookings_qs.values_list("state").annotate(c=Count("id")))
         state_breakdown = [{"state": s, "count": state_counts.get(s, 0)} for s in state_order]
 
-        # Conversion: of every booking that left REQUESTED (i.e. owner
-        # acted on it), what fraction did they accept rather than reject?
         decided = bookings_qs.exclude(state=BookingState.REQUESTED.value).count()
         accepted_or_better = bookings_qs.exclude(
             state__in=[
@@ -164,7 +148,6 @@ class OwnerAnalyticsView(APIView):
         ).count()
         acceptance_rate = round(accepted_or_better / decided * 100) if decided else 0
 
-        # 30-day window for "recent" totals.
         since = timezone.now() - timedelta(days=30)
         last_30d = bookings_qs.filter(created_at__gte=since)
         last_30d_count = last_30d.count()
@@ -172,7 +155,6 @@ class OwnerAnalyticsView(APIView):
             s=Sum("total_amount")
         )["s"] or Decimal("0")
 
-        # Top 5 listings by booking count + lifetime revenue.
         top_listings_qs = listings_qs.annotate(
             booking_count=Count("bookings"),
             revenue=Sum(
@@ -193,7 +175,6 @@ class OwnerAnalyticsView(APIView):
             for listing in top_listings_qs
         ]
 
-        # Last 5 bookings across the owner's listings.
         recent_qs = bookings_qs.select_related("listing", "renter").order_by("-created_at")[:5]
         recent = [
             {
@@ -231,8 +212,6 @@ class OwnerAnalyticsView(APIView):
 
 
 class BookingPriceQuote(APIView):
-    """POST {listing, start_at, end_at} → price preview without saving."""
-
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):

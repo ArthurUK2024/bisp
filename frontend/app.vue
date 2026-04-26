@@ -1,20 +1,3 @@
-<!-- app.vue -->
-<!--
-  Root app shell. Wraps every page in:
-
-    1. <UApp> — Nuxt UI v3 root provider (toast stack, modal root,
-       theme + locale context). Must stay at the top so child pages
-       can open toasts and modals.
-    2. A global <header> with the Ijara wordmark and an auth-aware
-       nav row:
-       - Signed in   → "Profile" link + "Log out" button
-       - Signed out  → "Sign in" + "Register" links
-       The header reads useAuthStore() reactively so the logged-in
-       and logged-out variants swap without a page reload.
-
-  The <NuxtPage> slot renders underneath the header; protected pages
-  still kick through middleware/auth.ts before they mount.
--->
 <script setup lang="ts">
 const auth = useAuthStore()
 
@@ -32,13 +15,6 @@ async function handleLogout() {
           <NuxtLink to="/" class="text-xl font-semibold tracking-tight"> Ijara </NuxtLink>
           <nav class="flex items-center gap-4 text-sm">
             <NuxtLink to="/listings" class="hover:underline">Browse</NuxtLink>
-            <!--
-              Auth state hydrates client-only via plugins/auth.client.ts
-              (the refresh cookie is HttpOnly + Path=/api/auth/, so the
-              SSR call cannot reach Django). Wrap the auth-dependent nav
-              in <ClientOnly> so SSR does not render either variant and
-              hydration cannot mismatch.
-            -->
             <ClientOnly>
               <template v-if="auth.isAuthed">
                 <NuxtLink to="/dashboard/listings" class="hover:underline">My listings</NuxtLink>

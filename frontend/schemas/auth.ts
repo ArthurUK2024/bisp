@@ -1,16 +1,3 @@
-// schemas/auth.ts
-//
-// Zod schemas for the login and register forms. Duplicated on the Django
-// side in apps/accounts/serializers.py::UserRegistrationSerializer, which
-// is the authoritative check — this schema powers inline form feedback as
-// the user types. The register schema mirrors Django's
-// LetterAndDigitValidator so the two rulesets stay in lockstep, per
-// ARCHITECTURE.md §Form-validation.
-//
-// The login schema uses a weaker `min(8)` password rule because the real
-// check is Django's — we just want to avoid a pointless round trip on an
-// obviously invalid field.
-
 import { z } from 'zod'
 
 const registerPasswordSchema = z

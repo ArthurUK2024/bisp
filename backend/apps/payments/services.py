@@ -1,15 +1,3 @@
-"""Stripe service layer.
-
-create_payment_intent: builds a Stripe PaymentIntent for a booking,
-stores the Payment row, returns client_secret for the frontend
-Payment Element.
-
-handle_webhook_event: verifies signature on the raw body, dedupes
-via StripeEvent.event_id (unique constraint), and routes the verified
-event into booking_service.transition. payment_intent.succeeded is
-the ONLY caller that writes the `paid` state.
-"""
-
 from __future__ import annotations
 
 from decimal import Decimal
@@ -31,9 +19,7 @@ class StripeNotConfigured(APIException):
     default_code = "stripe_not_configured"
 
 
-# Stripe test mode does not support UZS, so amounts are sent in USD with
-# a documented conversion rate. The report's Methodology chapter frames
-# this as the "production swap to Click/Payme" decision.
+# Stripe test mode does not support UZS, so charge in USD using a fixed conversion.
 USD_PER_UZS = Decimal("0.000079")
 
 
@@ -44,9 +30,9 @@ def _ensure_configured() -> None:
 
 
 def amount_to_cents(uzs_total: Decimal) -> int:
-    """Convert a UZS booking total into USD cents Stripe can charge."""
     usd = (Decimal(uzs_total) * USD_PER_UZS).quantize(Decimal("0.01"))
-    return max(50, int(usd * 100))  # Stripe minimum is $0.50
+    # Stripe minimum charge is $0.50.
+    return max(50, int(usd * 100))
 
 
 def _guard_stripe_booking(booking: Booking) -> None:
@@ -59,7 +45,6 @@ def _guard_stripe_booking(booking: Booking) -> None:
 
 
 def create_payment_intent(booking: Booking) -> Payment:
-    """Embedded Payment Element flow (kept for backward compatibility)."""
     _ensure_configured()
     _guard_stripe_booking(booking)
 
@@ -85,12 +70,6 @@ def create_payment_intent(booking: Booking) -> Payment:
 
 
 def create_checkout_session(booking: Booking, success_url: str, cancel_url: str) -> str:
-    """Hosted Stripe Checkout — return the URL the renter should be
-    redirected to. Stripe sends the user back to success_url after
-    payment with ?session_id=cs_... in the query string. We then call
-    verify_checkout_session() to flip the booking to paid; the webhook
-    is a backup path, not a hard dependency.
-    """
     _ensure_configured()
     _guard_stripe_booking(booking)
 
@@ -134,11 +113,6 @@ def create_checkout_session(booking: Booking, success_url: str, cancel_url: str)
 
 
 def verify_checkout_session(booking: Booking, session_id: str) -> Booking:
-    """Called when Stripe redirects the renter back. Confirms the
-    session is paid against Stripe's API, then transitions the booking.
-    Idempotent: a second call after the booking is already in `paid`
-    is a no-op.
-    """
     _ensure_configured()
 
     try:
@@ -171,7 +145,6 @@ def verify_checkout_session(booking: Booking, session_id: str) -> Booking:
 
 
 def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> str:
-    """Verify, dedupe, route. Returns event id."""
     _ensure_configured()
     try:
         event = stripe.Webhook.construct_event(
@@ -190,7 +163,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> str:
                 payload=event,
             )
     except IntegrityError:
-        # Stripe re-delivered an event we already processed — short-circuit.
+        # Already processed this event id; idempotent skip.
         return event["id"]
 
     if event["type"] == "payment_intent.succeeded":
@@ -215,8 +188,7 @@ def _on_intent_succeeded(intent: dict) -> None:
 
     booking = payment.booking
     if booking.state == BookingState.ACCEPTED.value:
-        # actor=None routes through booking_service.transition's "system"
-        # role — the only path allowed to write `paid`.
+        # actor=None routes through transition()'s "system" role, the only path that writes `paid`.
         transition(
             booking,
             BookingState.PAID.value,

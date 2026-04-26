@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/listings/index.vue
-// My listings -- view and delete items I've posted.
-
 import { useListings, CATEGORIES, DISTRICTS } from '~/composables/useListings'
 
 definePageMeta({
@@ -23,10 +20,6 @@ async function load() {
   }
 }
 
-// Client-only fetch: the auth store only hydrates on the client (the
-// refresh cookie is HttpOnly + Path=/api/auth/, unreachable from SSR),
-// so an SSR call here would land at Django without a Bearer token and
-// return the unfiltered listing set — guaranteed hydration mismatch.
 onMounted(load)
 
 async function onDelete(id: number) {

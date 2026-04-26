@@ -1,9 +1,4 @@
 <script setup lang="ts">
-// pages/listings/index.vue
-// Public catalog browse with a search bar and filter set. Backed by
-// TanStack Query so back-and-forth navigation between detail and
-// browse does not refetch within the staleTime window.
-
 import { useQuery } from '@tanstack/vue-query'
 import { CATEGORIES, DISTRICTS, useListings } from '~/composables/useListings'
 
@@ -17,7 +12,6 @@ const unit = ref((route.query.unit as string) || '')
 const minPrice = ref((route.query.min_price as string) || '')
 const maxPrice = ref((route.query.max_price as string) || '')
 
-// Debounce keystrokes so we don't fire a request per character.
 const debouncedQuery = ref(query.value)
 let queryTimer: ReturnType<typeof setTimeout> | null = null
 watch(query, (q) => {
@@ -38,9 +32,6 @@ const filters = computed(() => ({
   max_price: maxPrice.value || undefined,
 }))
 
-// TanStack Query keyed on the filter object so each unique filter
-// combination caches separately. Within staleTime (30s), going back
-// to a previous filter combination is a memory hit, no network call.
 const { data: listings } = useQuery({
   queryKey: ['listings', filters],
   queryFn: () => fetchListings(filters.value),

@@ -1,16 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/profile.vue
-//
-// Profile edit (PROF-01 + PROF-02 frontend half). Visual language
-// mirrors the listing create/edit pages — same outer shell, same
-// rounded-xl card styling, same input shapes, same footer button
-// pattern, same character counter on the long-form field.
-//
-// Avatar upload is outside the validation form on purpose: the avatar
-// is stored as a file reference, not a JSON field, and POSTs as
-// multipart immediately on file pick. The text-fields form sends the
-// ProfileSerializer JSON shape on Save.
-
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import {
@@ -58,13 +46,10 @@ async function loadProfile() {
     })
     avatarUrl.value = profile.avatar
   } catch {
-    // useAuthedApi handles 401 with a /login redirect; transient
-    // failures the user can recover by reloading.
+    // ignore
   }
 }
 
-// Client-only: SSR has no auth state, so the fetch would land
-// without a Bearer token and fail.
 onMounted(loadProfile)
 
 const onSubmit = handleSubmit(async (val) => {

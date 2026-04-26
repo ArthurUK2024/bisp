@@ -1,7 +1,3 @@
-// composables/useListings.ts
-// Simple wrapper around the catalog API. Public calls use useApi(),
-// owner calls use useAuthedApi() so the Bearer + BFF catch-all kick in.
-
 export function useListings() {
   const publicApi = useApi()
   const authedApi = useAuthedApi()

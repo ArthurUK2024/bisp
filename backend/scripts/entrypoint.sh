@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Entrypoint for the api container. Applies migrations, seeds demo data
-# on a fresh database, then starts the Django development server. Compose
-# healthchecks curl /api/v1/health/ against this port.
 set -euo pipefail
 
 echo ">> applying database migrations"

@@ -1,16 +1,3 @@
-"""Seed the database with realistic demo data.
-
-Creates 4 demo users with profiles, 18 listings across all 7 categories
-and many districts, 2-3 photos per listing (fetched from picsum.photos
-with a Pillow fallback if the network fails), and a handful of demo
-bookings in different states so dashboards look populated on a fresh
-clone.
-
-Usage:
-    docker compose exec api python manage.py seed_demo
-    docker compose exec api python manage.py seed_demo --reset
-"""
-
 import io
 import urllib.error
 import urllib.request
@@ -258,20 +245,15 @@ class Command(BaseCommand):
             )
         )
 
-    # --- helpers ---------------------------------------------------------
-
     def _reset(self):
         demo_users = User.objects.filter(email__endswith="@ijara.demo")
         self.stdout.write(f"Deleting {demo_users.count()} demo users and related data...")
-        # BookingStateTransition.actor is on_delete=PROTECT, so we must
-        # clear bookings (and their transitions cascade) before deleting
-        # the users that authored those transitions.
+        # BookingStateTransition.actor is PROTECT — clear bookings before users.
         Booking.objects.filter(renter__in=demo_users).delete()
         Booking.objects.filter(listing__owner__in=demo_users).delete()
         demo_users.delete()
 
     def _make_user(self, email, display_name, _home_district, phone):
-        # First demo account doubles as the supervisor-facing admin login.
         is_staff = email == DEMO_USERS[0][0]
         user, created = User.objects.get_or_create(
             email=email,
@@ -315,14 +297,12 @@ class Command(BaseCommand):
                 "price_month": Decimal(price_month) if price_month else None,
             },
         )
-        # Top up photos only if there are not enough already.
         missing = photo_count - listing.photos.count()
         for i in range(missing):
             self._attach_photo(listing, seed_id=listing.id * 10 + i)
         return listing
 
     def _attach_photo(self, listing, seed_id):
-        """Fetch a photo from picsum or fall back to a Pillow placeholder."""
         try:
             url = f"https://picsum.photos/seed/ijara-{seed_id}/800/600"
             with urllib.request.urlopen(url, timeout=6) as response:

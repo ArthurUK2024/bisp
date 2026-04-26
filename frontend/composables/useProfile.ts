@@ -1,17 +1,3 @@
-// composables/useProfile.ts
-//
-// Browser-side profile actions. Wraps useAuthedApi() so the Bearer
-// header from the Pinia store is attached on every call and a 401
-// triggers the single silent-refresh retry. The three actions mirror
-// the Django endpoints one-to-one:
-//
-//   fetchMyProfile()  → GET   /api/auth/users/me/profile/
-//   updateMyProfile() → PATCH /api/auth/users/me/profile/
-//   uploadAvatar()    → POST  /api/auth/users/me/avatar/  (multipart)
-//
-// The catch-all BFF at server/api/auth/[...path].ts forwards each call
-// to Django /api/v1/users/me/{profile,avatar}/ with the Bearer attached.
-
 import type { ProfileInput } from '~/schemas/profile'
 
 export interface Profile {

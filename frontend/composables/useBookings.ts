@@ -1,7 +1,3 @@
-// composables/useBookings.ts
-// Booking actions. Reads via auth proxy; the price quote endpoint is
-// public so the listing detail page can preview totals before login.
-
 export type BookingState =
   | 'requested'
   | 'accepted'
@@ -96,24 +92,14 @@ export const BOOKING_STATE_LABELS: Record<BookingState, string> = {
   disputed: 'Disputed',
 }
 
-// Asia/Tashkent — UTC+5 with no DST.
 export const TASHKENT_OFFSET = '+05:00'
 
-/**
- * Convert a `datetime-local` form value (e.g. "2026-05-01T14:00") into
- * an ISO 8601 string with the Asia/Tashkent offset attached.
- */
 export function tashkentISO(localDateTime: string): string {
   if (!localDateTime) return ''
-  // datetime-local has no seconds in the default format; add them so
-  // the resulting ISO string parses cleanly on Python's fromisoformat.
   const withSeconds = localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime
   return `${withSeconds}${TASHKENT_OFFSET}`
 }
 
-/**
- * Format an ISO timestamp in Asia/Tashkent for display.
- */
 export function formatTashkent(iso: string, opts: Intl.DateTimeFormatOptions = {}): string {
   if (!iso) return ''
   return new Date(iso).toLocaleString('en-GB', {

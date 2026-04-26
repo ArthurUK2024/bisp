@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/bookings.vue
-// Card list split by renter/owner role. Action buttons drive the
-// 9-state FSM via PATCH bookings/<id>/ {state}.
-
 import {
   BOOKING_STATE_LABELS,
   formatTashkent,
@@ -60,8 +56,6 @@ function ownerActions(b: any): Action[] {
     ]
   }
   if (b.state === 'accepted') {
-    // Stripe bookings: owner must wait for the renter to pay before
-    // pickup. The "Mark picked up" button is hidden until state=paid.
     if (b.payment_method === 'stripe') {
       return [{ label: 'Cancel', state: 'cancelled', danger: true }]
     }
@@ -293,11 +287,6 @@ function durationLabel(b: any): string {
                 </button>
               </template>
               <template v-else>
-                <!--
-                  Stripe bookings: surface a "Pay now" CTA the moment
-                  the owner accepts so the renter does not have to dig
-                  into the booking detail page to find the Payment Element.
-                -->
                 <NuxtLink
                   v-if="b.state === 'accepted' && b.payment_method === 'stripe'"
                   :to="`/bookings/${b.id}`"

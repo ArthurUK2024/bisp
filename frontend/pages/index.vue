@@ -1,8 +1,4 @@
 <script setup lang="ts">
-// pages/index.vue
-// Landing page for Ijara -- hero, category shortcuts, latest listings
-// feed, and a three-step "how it works" section.
-
 import { CATEGORIES, DISTRICTS, useListings } from '~/composables/useListings'
 
 const { fetchListings } = useListings()

@@ -1,12 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/analytics.vue
-//
-// Owner analytics — opens with a one-sentence plain-English summary,
-// then groups numbers into "Money" and "Activity" so the page can be
-// scanned in 5 seconds. Zero-count rows in the state breakdown are
-// hidden behind a "Show all" toggle so the live data is always front
-// and centre.
-
 import {
   BOOKING_STATE_LABELS,
   formatTashkent,
@@ -51,7 +43,6 @@ function districtLabel(v: string): string {
   return DISTRICTS.find((d) => d.value === v)?.label ?? v
 }
 
-// Plain-English summary the user reads first.
 const summary = computed(() => {
   if (!data.value) return ''
   const d = data.value
@@ -79,7 +70,6 @@ const summary = computed(() => {
   return parts.join(' ')
 })
 
-// State chart — color tokens per FSM state.
 const STATE_TONE: Record<BookingState, string> = {
   requested: 'bg-amber-400',
   accepted: 'bg-emerald-400',
@@ -110,8 +100,6 @@ const maxStateCount = computed(() => {
   return Math.max(...data.value.state_breakdown.map((s) => s.count), 1)
 })
 
-// Top listings: only those that have ever had a booking. Sort by
-// revenue first (most useful "top" signal) then booking count.
 const performingListings = computed(() => {
   if (!data.value) return []
   return data.value.top_listings
@@ -209,7 +197,6 @@ function stateBadgeClass(state: string): string {
               <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500">Money</h2>
             </div>
 
-            <!-- Headline number: earned. -->
             <div>
               <p class="text-xs text-gray-500 mb-0.5">Earned and settled</p>
               <p class="text-4xl font-semibold tabular-nums text-gray-900">
@@ -257,7 +244,6 @@ function stateBadgeClass(state: string): string {
               <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500">Activity</h2>
             </div>
 
-            <!-- Headline number: bookings. -->
             <div>
               <p class="text-xs text-gray-500 mb-0.5">Bookings lifetime</p>
               <p class="text-4xl font-semibold tabular-nums text-gray-900">

@@ -1,5 +1,3 @@
-"""Catalog views."""
-
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.postgres.search import (
@@ -18,8 +16,6 @@ from .models import Listing, ListingPhoto
 from .serializers import ListingPhotoSerializer, ListingSerializer
 from .services import save_listing_photo, suggest_listing_from_photos
 
-# Pricing-unit → model field, used by the price filter and the "unit"
-# query parameter on /api/v1/listings/.
 _UNIT_FIELD = {
     "hour": "price_hour",
     "day": "price_day",
@@ -28,9 +24,6 @@ _UNIT_FIELD = {
 
 
 class ListingListCreate(generics.ListCreateAPIView):
-    """Browse + search + create. GET filters: category, district, q,
-    unit (hour/day/month), min_price, max_price, mine."""
-
     serializer_class = ListingSerializer
 
     def get_queryset(self):
@@ -67,9 +60,6 @@ class ListingListCreate(generics.ListCreateAPIView):
 
         q = params.get("q")
         if q:
-            # FTS hits the persistent search_vector + GIN index (kept
-            # fresh by apps.catalog.signals). Trigram word similarity
-            # catches typos that FTS misses.
             query = SearchQuery(q)
             qs = (
                 qs.annotate(
@@ -92,8 +82,6 @@ class ListingListCreate(generics.ListCreateAPIView):
 
 
 class ListingDetail(generics.RetrieveUpdateDestroyAPIView):
-    """GET a listing (public). PATCH/DELETE require the owner."""
-
     serializer_class = ListingSerializer
     lookup_url_kwarg = "id"
 
@@ -115,8 +103,6 @@ class ListingDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ListingPhotoUpload(APIView):
-    """POST a photo to a listing; DELETE removes one."""
-
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
 
@@ -136,13 +122,6 @@ class ListingPhotoUpload(APIView):
 
 
 class ListingAISuggest(APIView):
-    """POST photos, get back a draft title/description/category/prices.
-
-    Powers the photo-first flow on /dashboard/listings/new. The photos are
-    only sent to OpenAI; nothing is stored here. The actual listing photos
-    are uploaded after the user finalises step 2.
-    """
-
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
 
@@ -153,8 +132,6 @@ class ListingAISuggest(APIView):
         try:
             suggestion = suggest_listing_from_photos(files)
         except RuntimeError:
-            # No OpenAI key, or the call failed (quota, network, auth).
-            # Front end shows the manual-entry fallback banner.
             return Response(
                 {
                     "detail": (

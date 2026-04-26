@@ -1,14 +1,4 @@
 <script setup lang="ts">
-// pages/users/[id].vue
-//
-// Public read-only profile — PROF-03 + PROF-04. Uses useApi() (the
-// unauthenticated dual-URL wrapper) so SSR fetches hit the Docker
-// internal DNS name api:8000 and browser fetches hit the host port
-// mapping at localhost:8000. No Bearer header is attached because
-// the Django PublicProfileView sets authentication_classes = [] and
-// queryset.filter(is_active=True) so a soft-deleted account is a 404
-// by construction.
-
 interface PublicProfile {
   id: number
   display_name: string
@@ -47,7 +37,7 @@ const { data: profile, error } = await useAsyncData<PublicProfile>(
       <section class="space-y-3">
         <h2 class="text-lg font-medium">Listings</h2>
         <div class="rounded border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-          Listings will appear here in Phase 3.
+          Listings will appear here soon.
         </div>
       </section>
     </template>

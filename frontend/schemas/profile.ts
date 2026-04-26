@@ -1,12 +1,3 @@
-// schemas/profile.ts
-//
-// Zod schemas and upload constants for the /dashboard/profile edit form.
-// Mirrors the Django ProfileSerializer max-length validators so the
-// client rejects over-long values before the network call and surfaces
-// the same friendly message the backend would on a round trip. The
-// avatar constants live here so the page and the composable share one
-// source of truth for the 2 MB cap and the JPEG/PNG/WebP accept list.
-
 import { z } from 'zod'
 
 export const profileSchema = z.object({

@@ -1,11 +1,3 @@
-"""Booking services: pricing, creation, FSM transitions.
-
-The transition() function is the single legal writer of Booking.state.
-A grep across views/admin/webhooks for ``booking.state =`` should find
-zero matches outside this module — that invariant is what keeps the
-audit trail in BookingStateTransition complete.
-"""
-
 from __future__ import annotations
 
 import math
@@ -24,7 +16,6 @@ from .models import (
     PricingUnit,
 )
 
-# Seconds per pricing unit, used by the pricing calculator.
 _UNIT_SECONDS = {
     PricingUnit.HOUR: 60 * 60,
     PricingUnit.DAY: 24 * 60 * 60,
@@ -32,24 +23,11 @@ _UNIT_SECONDS = {
 }
 
 
-# -----------------------------------------------------------------------------
-# Pricing calculator (BOOK-02)
-# -----------------------------------------------------------------------------
-
-
 def _quantize(amount: Decimal) -> Decimal:
     return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def calculate_booking_price(listing, start_at: datetime, end_at: datetime):
-    """Pick the cheapest pricing unit for the requested window.
-
-    Rule: try every available tier (hour/day/month) the listing has set,
-    round the duration UP to whole units, multiply by the tier's unit
-    price, and pick the minimum total. Returns (unit, unit_price,
-    quantity, total_amount). Raises ValidationError if the listing has
-    no pricing tiers at all.
-    """
     if end_at <= start_at:
         raise ValidationError({"end_at": ["End time must be after start time."]})
 
@@ -78,11 +56,6 @@ def calculate_booking_price(listing, start_at: datetime, end_at: datetime):
     return unit_value, unit_price, quantity, total
 
 
-# -----------------------------------------------------------------------------
-# Booking creation (BOOK-01, BOOK-04)
-# -----------------------------------------------------------------------------
-
-
 def create_booking(
     listing,
     renter,
@@ -91,7 +64,6 @@ def create_booking(
     payment_method: str = PaymentMethod.CASH.value,
     note: str = "",
 ) -> Booking:
-    """Validate, price, and persist a booking. Atomic with audit row."""
     if not listing.is_active:
         raise ValidationError({"listing": ["This listing is no longer available."]})
     if renter.id == listing.owner_id:
@@ -131,7 +103,7 @@ def create_booking(
                 reason="created",
             )
     except IntegrityError as exc:
-        # ExclusionConstraint blocked an overlapping booking for this listing.
+        # Postgres exclusion constraint blocks overlapping bookings on the same listing.
         raise ValidationError(
             {"start_at": ["Those dates overlap with an existing booking."]}
         ) from exc
@@ -139,13 +111,8 @@ def create_booking(
     return booking
 
 
-# -----------------------------------------------------------------------------
-# FSM transition gate (BOOK-05, BOOK-06)
-# -----------------------------------------------------------------------------
-
-# Allowed transitions per actor role.
-# "owner" is the listing owner, "renter" is the booking renter,
-# "system" is non-user actors like the Stripe webhook.
+# transition() is the only legal writer of Booking.state; a grep for
+# `booking.state =` outside this module should find zero hits.
 _TRANSITIONS: dict[str, dict[str, list[str]]] = {
     "owner": {
         BookingState.REQUESTED.value: [
@@ -168,11 +135,9 @@ _TRANSITIONS: dict[str, dict[str, list[str]]] = {
         BookingState.ACCEPTED.value: [BookingState.CANCELLED.value],
     },
     "system": {
-        # Stripe webhook is the only writer of `paid`.
         BookingState.ACCEPTED.value: [BookingState.PAID.value],
     },
     "admin": {
-        # Staff can put anything into disputed for triage.
         BookingState.REQUESTED.value: [BookingState.DISPUTED.value],
         BookingState.ACCEPTED.value: [BookingState.DISPUTED.value],
         BookingState.PAID.value: [BookingState.DISPUTED.value],
@@ -185,9 +150,8 @@ _TRANSITIONS: dict[str, dict[str, list[str]]] = {
 def _resolve_role(booking: Booking, actor) -> str:
     if actor is None:
         return "system"
-    # Owner / renter relationships outrank staff status, so a staff
-    # member acting on their own booking still goes through the normal
-    # owner/renter gates rather than the broader admin lever.
+    # Owner/renter relationships outrank staff status, so a staff user
+    # acting on their own booking still uses the normal owner/renter gates.
     if actor.id == booking.listing.owner_id:
         return "owner"
     if actor.id == booking.renter_id:
@@ -203,7 +167,6 @@ def transition(
     actor=None,
     reason: str = "",
 ) -> Booking:
-    """Single legal writer of Booking.state. Atomic with audit row."""
     role = _resolve_role(booking, actor)
     allowed = _TRANSITIONS.get(role, {}).get(booking.state, [])
     if to_state not in allowed:
@@ -211,9 +174,6 @@ def transition(
             {"state": [f"Cannot move from {booking.state} to {to_state} as {role}."]}
         )
 
-    # Stripe bookings must clear payment before the owner can mark
-    # pickup. Cash-on-pickup is the alternate path: money changes hands
-    # at handover, so accepted → picked_up is correct for that case.
     if (
         to_state == BookingState.PICKED_UP.value
         and booking.state == BookingState.ACCEPTED.value

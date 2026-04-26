@@ -1,11 +1,4 @@
 <script setup lang="ts">
-// pages/dashboard/listings/[id]/edit.vue
-// Owner edit form. Visual language mirrors pages/dashboard/listings/new.vue
-// so the create-vs-edit flow feels like the same surface — same card
-// styling, same custom selects, same UZS-prefixed pricing inputs, same
-// character counters, same footer button group. Photos section stays
-// inline (no two-step indicator) because edit is single-screen.
-
 import { CATEGORIES, DISTRICTS, useListings } from '~/composables/useListings'
 
 definePageMeta({
@@ -20,7 +13,6 @@ const { fetchListing, updateListing, uploadPhoto, deletePhoto } = useListings()
 const listing = ref<any>(null)
 const loadError = ref<string | null>(null)
 
-// Form fields start empty — populated by load() once the listing arrives.
 const title = ref('')
 const description = ref('')
 const category = ref('')
@@ -52,8 +44,6 @@ async function load() {
   price_month.value = listing.value.price_month ?? ''
 }
 
-// Client-only: SSR has no auth state (cookie is HttpOnly + Path=/api/auth/),
-// so an SSR fetch would be anonymous and produce a hydration mismatch.
 onMounted(load)
 
 const saving = ref(false)
