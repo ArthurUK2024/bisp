@@ -1,0 +1,48 @@
+# Environment files — never commit real secrets.
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+dist/
+.nitro/
+.cache/
+
+# Django
+media/
+staticfiles/
+db_data/
+*.sqlite3
+*.sqlite3-journal
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Coursework artefacts and personal docs — keep out of the public repo.
+*.pdf
+*.docx
+.claude/
+.planning/
+report/
+scripts/

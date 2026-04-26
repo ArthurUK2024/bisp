@@ -1,0 +1,40 @@
+# Source control
+.git/
+.gitignore
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+dist/
+.nitro/
+.cache/
+
+# Runtime data
+.env
+.env.*
+!.env.example
+media/
+db_data/
+staticfiles/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Planning and reference material — never ship into image layers
+.planning/
+*.docx
+*.pdf

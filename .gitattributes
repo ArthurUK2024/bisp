@@ -1,0 +1,10 @@
+# Force LF line endings on shell scripts and Dockerfiles, so Windows
+# checkouts still produce containers that boot. Without this, a CRLF
+# entrypoint.sh fails inside the Linux container with "bad interpreter".
+*.sh           text eol=lf
+*.bash         text eol=lf
+Dockerfile     text eol=lf
+*.Dockerfile   text eol=lf
+
+# Default: let git auto-detect text vs binary.
+* text=auto

@@ -1,0 +1,1 @@
+"""Search admin — placeholder."""

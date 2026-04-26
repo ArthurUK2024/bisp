@@ -1,0 +1,39 @@
+{
+  "name": "ijara-frontend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev --host 0.0.0.0 --port 3000",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "generate": "nuxt generate",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@nuxt/ui": "^3.0.0",
+    "@pinia/nuxt": "^0.11.0",
+    "@stripe/stripe-js": "^4.10.0",
+    "@tanstack/vue-query": "^5.0.0",
+    "@vee-validate/zod": "^4.15.0",
+    "@vueuse/core": "^12.0.0",
+    "@vueuse/nuxt": "^12.0.0",
+    "nuxt": "^3.17.0",
+    "pinia": "^3.0.0",
+    "vee-validate": "^4.15.0",
+    "vue": "^3.5.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.0.0",
+    "@nuxt/test-utils": "^3.14.0",
+    "@playwright/test": "^1.48.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.0"
+  }
+}
